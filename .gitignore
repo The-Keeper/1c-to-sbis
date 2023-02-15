@@ -9,3 +9,11 @@ node_modules
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 /.reference
+
+.idea
+.vscode
+
+yarn.lock
+package.lock
+.npmrc
+.npm

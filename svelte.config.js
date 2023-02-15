@@ -10,8 +10,14 @@ const config = {
 	paths: {
 		base: dev ? '' : '/1c-to-sbis/',
 	  },
-	kit: {
-		adapter: adapter()
+	  kit: {
+		adapter: adapter({
+			pages: 'build',
+			assets: 'build',
+			fallback: '404.html',
+			precompress: true,
+			strict: true
+		})
 	}
 };
 
