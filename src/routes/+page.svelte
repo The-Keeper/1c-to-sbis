@@ -1,17 +1,9 @@
 <script lang="ts">
 	import { read, utils, writeFile, type WorkBook } from 'xlsx';
-	import {delete_rows, delete_cols}  from '$lib/helper.js';
+	import { schema } from '../schema.js'
 
-	const schema = [
-		{
-			id: '5.09',
-			buy: { output: '0000080 5_09 Книга покупок.xlsx', 'to-del': [11, 9, 'O'] },
-			sell: { output: '0000090 5_09 Книга продаж.xlsx', 'to-del': [9, 7] }
-		}
-	];
 	let selected = schema[0];
 	let book: string = '';
-	let processDisabled = true;
 
 	let files: FileList;
 	let excelData: WorkBook;
@@ -36,48 +28,58 @@
 	$: if (excelData) {
 		let sheet_id = excelData['Workbook']['Sheets'][0]['name'];
 		sheet = excelData['Sheets'][sheet_id];
-		processDisabled = false;
 		book = {'Книга покупок': 'buy', 'Книга продаж': 'sell'}[sheet['A2'].v] || ''
 
-		console.log('DATA triggered', book);
+		console.debug('DATA triggered', book);
 	}
 
 	function processFile() {
-		function isNumber(value) {
-			return typeof value == 'number';
-		}
-
-
 		let sheet_id = excelData['Workbook']['Sheets'][0]['name'];
 	    let sheet = excelData['Sheets'][sheet_id];
 
 
 		let sel_schema = selected[book];
-		let to_del = sel_schema['to-del'];
 		let output_name = sel_schema['output'];
 
-		let rows_to_del = to_del.filter((x) => isNumber(x));
-		let cols_to_del = to_del.filter((x) => !isNumber(x));
-		console.log('COLS', cols_to_del, 'ROWS', rows_to_del);
-
 		// return index of a column based on its name
-		function alphaToNum(letters) {
-			for (var p = 0, n = 0; p < letters.length; p++) {
-				n = letters[p].charCodeAt() - 'A'.charCodeAt(0) + n * 26;
+		function alphaToNum(letters: String){
+			var chrs = ' ABCDEFGHIJKLMNOPQRSTUVWXYZ', mode = chrs.length - 1, number = 0;
+			for(var p = 0; p < letters.length; p++){
+				number = number * mode + chrs.indexOf(letters[p]);
 			}
-			// console.log("AtoN", letters, n)
-			return n;
-		}
-		
-		for (let r in rows_to_del) {
-			delete_rows(sheet, rows_to_del[r]);
+			return number-1;
 		}
 
-		for (let c in cols_to_del) {
-			delete_cols(sheet, cols_to_del[c]);
+		const oneToZeroBased = (x: Number) => x-1;
+		let rows_to_del = sel_schema['del-rows'].map(oneToZeroBased);
+		let cols_to_del = sel_schema['del-cols'].map(alphaToNum);
+		console.debug('COLS', cols_to_del, 'ROWS', rows_to_del);
+
+		// deletes column from array-of-arrays
+		function del_col_aoa(aoa, col_num: Number) {
+			for (let i in aoa) {
+				aoa[i].splice(col_num, 1);
+			}
+		}
+		// deletes row from array-of-arrays
+		function del_row_aoa(aoa, row_num: Number) {
+			aoa.splice(row_num, 1);
 		}
 
-		writeFile(excelData, output_name);
+		let output = utils.book_new();
+		let aoa = utils.sheet_to_json(sheet, { defval: "", header: 1 });
+
+		for (let i in rows_to_del) {
+			del_row_aoa(aoa, rows_to_del[i]);
+		}
+
+		for (let i in cols_to_del) {
+			del_col_aoa(aoa, cols_to_del[i]);
+		}
+
+		let worksheet = utils.aoa_to_sheet(aoa);
+		utils.book_append_sheet(output, worksheet, 'TDSheet');
+		writeFile(output, output_name, {bookType: "biff8"});
 	}
 </script>
 
