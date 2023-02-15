@@ -8,7 +8,7 @@ const config = {
 	// for more information about preprocessors
 	preprocess: vitePreprocess(),
 	paths: {
-		base: dev ? '' : '/1c-to-sbis',
+		base: dev ? '' : '/1c-to-sbis/',
 	  },
 	kit: {
 		adapter: adapter()
