@@ -83,6 +83,10 @@
 	}
 </script>
 
+<section id="descr">
+<p>Данное веб-приложение форматирует выгрузку книг продаж/покупок из 1С для последующей загрузки в СБИС. Обработка файлов происходит локально, никакие данные в интернет не загружаются.</p>
+</section>
+
 <section id="controls">
 	<label for="selVer">Версия выходного документа</label>
 	<select id="selVer" bind:value={selected}>
@@ -105,3 +109,4 @@
 
 	<button on:click={() => processFile()} disabled={!book}>Обработка</button>
 </section>
+<center><a href="https://github.com/The-Keeper/1c-to-sbis">Исходный код на GitHub</a></center>
