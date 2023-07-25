@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { read, utils, writeFile, type WorkBook, type Sheet } from 'xlsx';
-	import { schema } from '../schema.js'
+	import { schema } from '../process.js'
+	import { del_col_aoa, del_row_aoa } from "../utils.js";
 
 	let selected = schema[schema.length - 1];
 	let book: string = '';
@@ -26,7 +27,7 @@
 	}
 
 	$: if (excelData) {
-		let sheet_id: string = excelData['Workbook']['Sheets'][0]['name'];
+		let sheet_id: string = excelData['Workbook']['Sheets'][0]['name'] || "";
 		sheet = excelData['Sheets'][sheet_id];
 		selected.title_cells.forEach(function (cell) {
 			if (Object.hasOwn(sheet, cell) && sheet[cell].v == "Книга покупок") {
@@ -41,7 +42,7 @@
 	}
 
 	function processFile() {
-		let sheet_id = excelData['Workbook']['Sheets'][0]['name'];
+		let sheet_id = excelData['Workbook']['Sheets'][0]['name'] || "";
 	    let sheet = excelData['Sheets'][sheet_id];
 
 
@@ -58,20 +59,16 @@
 		}
 
 		const oneToZeroBased = (x: Number) => x-1;
-		let rows_to_del = sel_schema['del-rows'].map(oneToZeroBased);
-		let cols_to_del = sel_schema['del-cols'].map(alphaToNum);
-		console.debug('COLS', cols_to_del, 'ROWS', rows_to_del);
+		let rows_to_del: number[] = []
+		let cols_to_del: number[] = []
+ 		if (Object.hasOwn(sel_schema, "del-rows")) {
+			rows_to_del = sel_schema['del-rows'].map(oneToZeroBased);
+		}
+		if (Object.hasOwn(sel_schema, "del-cols")) {
+			cols_to_del = sel_schema['del-cols'].map(alphaToNum);
+		}
 
-		// deletes column from array-of-arrays
-		function del_col_aoa(aoa, col_num: Number) {
-			for (let i in aoa) {
-				aoa[i].splice(col_num, 1);
-			}
-		}
-		// deletes row from array-of-arrays
-		function del_row_aoa(aoa, row_num: Number) {
-			aoa.splice(row_num, 1);
-		}
+		console.debug('COLS', cols_to_del, 'ROWS', rows_to_del);
 
 		let output = utils.book_new();
 		let aoa = utils.sheet_to_json(sheet, { defval: "", header: 1 });
@@ -82,6 +79,10 @@
 
 		for (let i in cols_to_del) {
 			del_col_aoa(aoa, cols_to_del[i]);
+		}
+
+		if (Object.hasOwn(sel_schema, "process")) {
+			sel_schema.process(aoa)
 		}
 
 		let worksheet = utils.aoa_to_sheet(aoa);
