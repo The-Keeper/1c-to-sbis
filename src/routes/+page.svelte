@@ -1,14 +1,13 @@
 <script lang="ts">
-	import { read, utils, writeFile, type WorkBook } from 'xlsx';
+	import { read, utils, writeFile, type WorkBook, type Sheet } from 'xlsx';
 	import { schema } from '../schema.js'
 
 	let selected = schema[schema.length - 1];
 	let book: string = '';
-	$: book = book;
 
 	let files: FileList;
 	let excelData: WorkBook;
-	let sheet;
+	let sheet: Sheet;
 
 	$: if (files && files[0]) {
 		// Note that `files` is of type `FileList`, not an Array:
@@ -27,15 +26,13 @@
 	}
 
 	$: if (excelData) {
-		let sheet_id = excelData['Workbook']['Sheets'][0]['name'];
+		let sheet_id: string = excelData['Workbook']['Sheets'][0]['name'];
 		sheet = excelData['Sheets'][sheet_id];
-		selected.title_cells.forEach(function (title_cell) {
-			console.log("CELL", title_cell)
-
-			if (sheet[title_cell].v == "Книга покупок") {
+		selected.title_cells.forEach(function (cell) {
+			if (Object.hasOwn(sheet, cell) && sheet[cell].v == "Книга покупок") {
 				book = 'buy'
 			}
-			if (sheet[title_cell].v == "Книга продаж") {
+			if (Object.hasOwn(sheet, cell) && sheet[cell].v == "Книга продаж") {
 				book = 'sell'
 			}		
 		})
@@ -117,6 +114,6 @@
 			<option value="sell">Книга продаж</option>
 		</select>
 
-	<button on:click={() => processFile()}>Обработка</button>
+	<button on:click={() => processFile()} disabled={!book}>Обработка</button>
 </section>
 <center><a href="https://github.com/The-Keeper/1c-to-sbis">Исходный код на GitHub</a></center>
