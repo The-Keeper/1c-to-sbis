@@ -2,8 +2,9 @@
 	import { read, utils, writeFile, type WorkBook } from 'xlsx';
 	import { schema } from '../schema.js'
 
-	let selected = schema[0];
+	let selected = schema[schema.length - 1];
 	let book: string = '';
+	$: book = book;
 
 	let files: FileList;
 	let excelData: WorkBook;
@@ -28,7 +29,16 @@
 	$: if (excelData) {
 		let sheet_id = excelData['Workbook']['Sheets'][0]['name'];
 		sheet = excelData['Sheets'][sheet_id];
-		book = {'Книга покупок': 'buy', 'Книга продаж': 'sell'}[sheet['A2'].v] || ''
+		selected.title_cells.forEach(function (title_cell) {
+			console.log("CELL", title_cell)
+
+			if (sheet[title_cell].v == "Книга покупок") {
+				book = 'buy'
+			}
+			if (sheet[title_cell].v == "Книга продаж") {
+				book = 'sell'
+			}		
+		})
 
 		console.debug('DATA triggered', book);
 	}
@@ -107,6 +117,6 @@
 			<option value="sell">Книга продаж</option>
 		</select>
 
-	<button on:click={() => processFile()} disabled={!book}>Обработка</button>
+	<button on:click={() => processFile()}>Обработка</button>
 </section>
 <center><a href="https://github.com/The-Keeper/1c-to-sbis">Исходный код на GitHub</a></center>
