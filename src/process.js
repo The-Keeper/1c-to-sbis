@@ -1,4 +1,4 @@
-import { add_col_aoa, del_col_aoa, parseNum, aoa_ColumnSpliceBySignature, aoa_CopyColumnBySignature, aoa_EnumerateDataBySignature } from "./utils";
+import { parseNum, aoa_ColumnSpliceBySignature, aoa_CopyColumnBySignature, aoa_EnumerateDataBySignature } from "./utils";
 
 
 export const schema = [
@@ -14,33 +14,31 @@ export const schema = [
             // PREFERABLE "process" workflow: process, splice columns, splice rows
             process: (aoa) => 
             {
-                aoa.splice(1, 0, [""]);     // insert one empty row
-                aoa.splice(8, 2)            // delete two rows after 8th
-                
-                add_col_aoa(aoa, 1)         // add column
+                const DATA_IS_PRESENT_COL = 0
 
-                // cols 9/10 = ИИН/КПП
-                // row 10     - first significant row
-                for (let r = 10; r < aoa.length; r++) {
-                    if (aoa[r][0] != "") {
-                        aoa[r][9] = aoa[r][9] + "/" + aoa[r][10]
-
-                        // НДС
-                        aoa[r][14] = parseNum(aoa[r][15]) + parseNum(aoa[r][17]) + parseNum(aoa[r][19])
+                // меняем формат ИИН и КПП
+                const IIN_COL = 8, KPP_COL = 9; 
+                const DATA_STARTS_ROW = 11; 
+                const NDS_PART_COLS = [13, 15, 18]
+                const NDS_TARGET_TOL = 12
+                for (let r = DATA_STARTS_ROW; r < aoa.length; r++) {
+                    if (aoa[r][DATA_IS_PRESENT_COL] != "") {
+                        aoa[r][IIN_COL] = aoa[r][IIN_COL] + "/" + aoa[r][KPP_COL]
+                        aoa[r][NDS_TARGET_TOL] = NDS_PART_COLS.map(i => parseNum(aoa[r][i])).reduce((partialSum, a) => partialSum + a, 0);
                     }
                 }
-                del_col_aoa(aoa, 10); // delete the no longer needed КПП column
-                del_col_aoa(aoa, 12);
-                add_col_aoa(aoa, 11); // add two colums after
-                add_col_aoa(aoa, 11);
-                for (let i=4; i>0; i--) {   // add four columns
-                    add_col_aoa(aoa, 15);
-                }
+                const ENUM_ROW = 10, OUTPUT_COL_NUM = 19;
+                aoa_ColumnSpliceBySignature(aoa, ENUM_ROW, "2", 0, 1);     // добавить пустую колонку перед пунктом "2"
+                aoa_ColumnSpliceBySignature(aoa, ENUM_ROW, "5б", 1, 2);     // удалить 5б и добавить 2 колонки на её месте
+                aoa_ColumnSpliceBySignature(aoa, ENUM_ROW, "8б", 0, 4);     // вставить 4 колонки перед пунктом 8б
 
-                for (let i = 0; i < 19; i++) {
-                    aoa[9][i] = i+1     // add numbers to enumeration row
+                for (let i = 0; i < OUTPUT_COL_NUM; i++) {  // добавить нумерацию столбцов
+                    aoa[ENUM_ROW][i] = i+1;    
                 }
-            }
+                aoa.splice(2, 0, [""]);     // добавить пустую сторку перед третьей
+                aoa.splice(8, 2)            // удалить две строки после 8-й
+
+            }    
         },
         sell: { output: '0000090 5_10 Книга продаж.xls', 
         // PREFERABLE "process" workflow: process, splice columns, splice rows
